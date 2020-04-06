@@ -1,76 +1,91 @@
 #include <CapacitiveSensor.h>
 
 /*
- * CapitiveSense Library Demo Sketch
- * Paul Badger 2008
- * Uses a high value resistor e.g. 10 megohm between send pin and receive pin
- * Resistor effects sensitivity, experiment with values, 50 kilohm - 50 megohm. Larger resistor values yield larger sensor values.
- * Receive pin is the sensor pin - try different amounts of foil/metal on this pin
- * Best results are obtained if sensor foil and wire is covered with an insulator such as paper or plastic sheet
+ * Arduino Keyboard Sketch
+ * Richard Kendall 2020
+ * Uses capacitive sensing pads to play tones, as part of a childrens toy
+ * 
+ * More details here
+ * https://github.com/richardjkendall/arduino-keyboard
  */
 
+// tone freqs
+const int C_FREQ = 1046;
+const int D_FREQ = 1175;
+const int E_FREQ = 1318;
 
-CapacitiveSensor   cs_4_2 = CapacitiveSensor(4,2);        // 10 megohm resistor between pins 4 & 2, pin 2 is sensor pin, add wire, foil
-CapacitiveSensor   cs_4_5 = CapacitiveSensor(4,5);        // 10 megohm resistor between pins 4 & 6, pin 6 is sensor pin, add wire, foil
-CapacitiveSensor   cs_4_8 = CapacitiveSensor(4,8);        // 10 megohm resistor between pins 4 & 8, pin 8 is sensor pin, add wire, foil
+// input key pins
+const int C_KEY_PIN = 2;
+const int D_KEY_PIN = 5;
+const int E_KEY_PIN = 8;
 
-int THRESHOLD = 2000;
+// output pins for LEDs
+const int LED1_PIN = A0;
+const int LED2_PIN = A1;
+const int LED3_PIN = A2;
 
-void setup()                    
-{
-   pinMode(A0, OUTPUT);
-   pinMode(A1, OUTPUT);
-   pinMode(A2, OUTPUT);
+// output tone pin
+const int TONE_PIN = 10;
+
+// this is the threshold used to detect a finger touching the cap sense pads
+const int THRESHOLD = 1000;
+
+// setup cap sensors
+CapacitiveSensor c_key = CapacitiveSensor(4, C_KEY_PIN);        // 10 megohm resistor between pins 4 & 2, pin 2 is sensor pin, add wire, foil
+CapacitiveSensor d_key = CapacitiveSensor(4, D_KEY_PIN);        // 10 megohm resistor between pins 4 & 6, pin 6 is sensor pin, add wire, foil
+CapacitiveSensor e_key = CapacitiveSensor(4, E_KEY_PIN);        // 10 megohm resistor between pins 4 & 8, pin 8 is sensor pin, add wire, foil
+
+// tone state data
+int current_tone = 0;
+int new_tone = 0;
+
+void setup() {
+  // setup output pins
+  pinMode(A0, OUTPUT);
+  pinMode(A1, OUTPUT);
+  pinMode(A2, OUTPUT);
+
+  // reset state data
+  current_tone = 0;
+  new_tone = 0;
+  
+   
    //cs_4_2.set_CS_AutocaL_Millis(0xFFFFFFFF);     // turn off autocalibrate on channel 1 - just as an example
-   //Serial.begin(9600);
+  Serial.begin(9600);
 
 }
 
-void loop()                    
-{
-    //long start = millis();
-    long total1 =  cs_4_2.capacitiveSensor(30);
-    long total2 =  cs_4_5.capacitiveSensor(30);
-    long total3 =  cs_4_8.capacitiveSensor(30);
+void loop() {
+  // read the sensors
+  long c_val = c_key.capacitiveSensor(30);
+  long d_val = d_key.capacitiveSensor(30);
+  long e_val = e_key.capacitiveSensor(30);
 
-    /*Serial.print(millis() - start);        // check on performance in milliseconds
-    Serial.print("\t");                    // tab character for debug window spacing
+  Serial.print(c_val);
+  Serial.print("\t");
+  Serial.print(d_val);
+  Serial.print("\t");
+  Serial.println(e_val);
 
-    Serial.print(total1 > 4000 ? "p" : "n");                  // print sensor output 1
-    Serial.print("\t");
-    Serial.print(total2 > 4000 ? "p" : "n");                  // print sensor output 2
-    Serial.print("\t");
-    Serial.println(total3 > 4000 ? "p" : "n");                // print sensor output 3
+  // determine new tone value
+  new_tone = 0;
+  if(c_val > THRESHOLD) new_tone = C_FREQ;
+  if(d_val > THRESHOLD) new_tone = D_FREQ;
+  if(e_val > THRESHOLD) new_tone = E_FREQ;
 
-    delay(3);                             // arbitrary delay to limit data to serial port */
+  // update LEDs
+  digitalWrite(LED1_PIN, c_val > THRESHOLD ? HIGH : LOW);
+  digitalWrite(LED2_PIN, d_val > THRESHOLD ? HIGH : LOW);
+  digitalWrite(LED3_PIN, e_val > THRESHOLD ? HIGH : LOW);
 
-    digitalWrite(A0, total1 > THRESHOLD ? HIGH : LOW);
-    digitalWrite(A1, total2 > THRESHOLD ? HIGH : LOW);
-    digitalWrite(A2, total3 > THRESHOLD ? HIGH : LOW);
-
-    bool t = false;
-    if(total1 > THRESHOLD) {
-      t = true;
-      tone(10, 1046, 100);
+  // do we need to take action?
+  if(new_tone != current_tone) {
+    // is new tone 0, then stop the tone
+    if(new_tone == 0) {
+      noTone(TONE_PIN);
     } else {
-      noTone(10);
+      tone(TONE_PIN, new_tone);
     }
-
-    if(total2 > THRESHOLD) {
-      t = true;
-      tone(10, 1175, 100);
-    } else {
-      if(!t) {
-        noTone(10);
-      }
-    }
-
-    if(total3 > THRESHOLD) {
-      t = true;
-      tone(10, 1318, 100);
-    } else {
-      if(!t) {
-        noTone(10);
-      }
-    }
+    current_tone = new_tone;
+  }
 }
