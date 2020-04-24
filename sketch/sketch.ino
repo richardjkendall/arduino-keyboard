@@ -73,6 +73,9 @@ CBuffer a_buf = CBuffer();
 CBuffer b_buf = CBuffer();
 CBuffer c2_buf = CBuffer();
 
+// debug?
+const bool DEBUG = false;
+
 void setup() {
   // setup output pins
   pinMode(LED1_PIN, OUTPUT);
@@ -87,8 +90,10 @@ void setup() {
   // reset state data
   current_tone = 0;
   new_tone = 0;
-   
-  Serial.begin(9600);
+
+  if(DEBUG) {
+    Serial.begin(9600);
+  }
 }
 
 void loop() {
@@ -128,22 +133,23 @@ void loop() {
   long b_ave = b_buf.avg();
   long c2_ave = c2_buf.avg();*/
 
-  
-  Serial.print(c_val);
-  Serial.print("\t");
-  Serial.print(d_val);
-  Serial.print("\t");
-  Serial.print(e_val);
-  Serial.print("\t");
-  Serial.print(f_val);
-  Serial.print("\t");
-  Serial.print(g_val);
-  Serial.print("\t");
-  Serial.print(a_val);
-  Serial.print("\t");
-  Serial.print(b_val);
-  Serial.print("\t");
-  Serial.println(c2_val);
+  if (DEBUG) {
+    Serial.print(c_val);
+    Serial.print("\t");
+    Serial.print(d_val);
+    Serial.print("\t");
+    Serial.print(e_val);
+    Serial.print("\t");
+    Serial.print(f_val);
+    Serial.print("\t");
+    Serial.print(g_val);
+    Serial.print("\t");
+    Serial.print(a_val);
+    Serial.print("\t");
+    Serial.print(b_val);
+    Serial.print("\t");
+    Serial.println(c2_val);
+  }
 
   // determine new tone value
   new_tone = 0;
