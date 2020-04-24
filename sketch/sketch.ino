@@ -1,4 +1,5 @@
 #include <CapacitiveSensor.h>
+#include "CBuffer.h"
 
 /*
  * Arduino Keyboard Sketch
@@ -21,14 +22,14 @@ const int C2_FREQ = 2093;
 
 // input key pins
 const int S_PIN = 4;
-const int C_KEY_PIN = 5;
-const int D_KEY_PIN = 6;
-const int E_KEY_PIN = 7;
-const int F_KEY_PIN = 8;
-const int G_KEY_PIN = 9;
-const int A_KEY_PIN = 11;
-const int B_KEY_PIN = 12;
-const int C2_KEY_PIN = 13;
+const int C_KEY_PIN = 9;
+const int D_KEY_PIN = 10;
+const int E_KEY_PIN = 11;
+const int F_KEY_PIN = 12;
+const int G_KEY_PIN = 13;
+const int A_KEY_PIN = 8;
+const int B_KEY_PIN = 7;
+const int C2_KEY_PIN = 6;
 
 // output pins for LEDs
 const int LED1_PIN = A0;
@@ -41,35 +42,36 @@ const int LED7_PIN = 2;
 const int LED8_PIN = 3;
 
 // output tone pin
-const int TONE_PIN = 10;
+const int TONE_PIN = 5;
 
 // this is the threshold factor to detect a finger touching the cap sense pads
 const int THRESHOLD = 5;
 const int TRIGGER_COUNT = 0;
+const int ABS_THRESHOLD = 2000;
 
 // setup cap sensors
-CapacitiveSensor c_key = CapacitiveSensor(S_PIN, C_KEY_PIN);        // 10 megohm resistor between pins 4 & 2, pin 2 is sensor pin, add wire, foil
-CapacitiveSensor d_key = CapacitiveSensor(S_PIN, D_KEY_PIN);        // 10 megohm resistor between pins 4 & 6, pin 6 is sensor pin, add wire, foil
-CapacitiveSensor e_key = CapacitiveSensor(S_PIN, E_KEY_PIN);        // 10 megohm resistor between pins 4 & 8, pin 8 is sensor pin, add wire, foil
+CapacitiveSensor c_key = CapacitiveSensor(S_PIN, C_KEY_PIN);        
+CapacitiveSensor d_key = CapacitiveSensor(S_PIN, D_KEY_PIN);        
+CapacitiveSensor e_key = CapacitiveSensor(S_PIN, E_KEY_PIN);        
 CapacitiveSensor f_key = CapacitiveSensor(S_PIN, F_KEY_PIN);
 CapacitiveSensor g_key = CapacitiveSensor(S_PIN, G_KEY_PIN);
 CapacitiveSensor a_key = CapacitiveSensor(S_PIN, A_KEY_PIN);
 CapacitiveSensor b_key = CapacitiveSensor(S_PIN, B_KEY_PIN);
 CapacitiveSensor c2_key = CapacitiveSensor(S_PIN, C2_KEY_PIN);
 
-// key counters
-int c_key_count = 0;
-int d_key_count = 0;
-int e_key_count = 0;
-int f_key_count = 0;
-int g_key_count = 0;
-int a_key_count = 0;
-int b_key_count = 0;
-int c2_key_count = 0;
-
 // tone state data
 int current_tone = 0;
 int new_tone = 0;
+
+// Circular buffers for smoothing
+CBuffer c_buf = CBuffer();
+CBuffer d_buf = CBuffer();
+CBuffer e_buf = CBuffer();
+CBuffer f_buf = CBuffer();
+CBuffer g_buf = CBuffer();
+CBuffer a_buf = CBuffer();
+CBuffer b_buf = CBuffer();
+CBuffer c2_buf = CBuffer();
 
 void setup() {
   // setup output pins
@@ -86,9 +88,7 @@ void setup() {
   current_tone = 0;
   new_tone = 0;
    
-  //cs_4_2.set_CS_AutocaL_Millis(0xFFFFFFFF);     // turn off autocalibrate on channel 1 - just as an example
   Serial.begin(9600);
-
 }
 
 void loop() {
@@ -101,9 +101,34 @@ void loop() {
   long a_val = a_key.capacitiveSensor(30);
   long b_val = b_key.capacitiveSensor(30);
   long c2_val = c2_key.capacitiveSensor(30);
+
+  // calc current avg
   long total = c_val + d_val + e_val + f_val + g_val + a_val + b_val + c2_val;
   long avg = total / 8;
 
+  // update cbufs
+  /*
+  c_buf.add(c_val);
+  d_buf.add(d_val);
+  e_buf.add(e_val);
+  f_buf.add(f_val);
+  g_buf.add(g_val);
+  a_buf.add(a_val);
+  b_buf.add(b_val);
+  c2_buf.add(c2_val);*/
+
+  // get moving aves
+  /*
+  long c_ave = c_buf.avg();
+  long d_ave = d_buf.avg();
+  long e_ave = e_buf.avg();
+  long f_ave = f_buf.avg();
+  long g_ave = g_buf.avg();
+  long a_ave = a_buf.avg();
+  long b_ave = b_buf.avg();
+  long c2_ave = c2_buf.avg();*/
+
+  
   Serial.print(c_val);
   Serial.print("\t");
   Serial.print(d_val);
@@ -120,36 +145,26 @@ void loop() {
   Serial.print("\t");
   Serial.println(c2_val);
 
-  // determine counter values
-  c_val > THRESHOLD * avg ? c_key_count++ : c_key_count = 0;
-  d_val > THRESHOLD * avg ? d_key_count++ : d_key_count = 0;
-  e_val > THRESHOLD * avg ? e_key_count++ : e_key_count = 0;
-  f_val > THRESHOLD * avg ? f_key_count++ : f_key_count = 0;
-  g_val > THRESHOLD * avg ? g_key_count++ : g_key_count = 0;
-  a_val > THRESHOLD * avg ? a_key_count++ : a_key_count = 0;
-  b_val > THRESHOLD * avg ? b_key_count++ : b_key_count = 0;
-  c2_val > THRESHOLD * avg ? c2_key_count++ : c2_key_count = 0;
-
   // determine new tone value
   new_tone = 0;
-  /*if(c_val > THRESHOLD) new_tone = C_FREQ;
-  if(d_val > THRESHOLD) new_tone = D_FREQ;
-  if(e_val > THRESHOLD) new_tone = E_FREQ;
-  if(f_val > THRESHOLD) new_tone = F_FREQ;
-  if(g_val > THRESHOLD) new_tone = G_FREQ;
-  if(a_val > THRESHOLD) new_tone = A_FREQ;
-  if(b_val > THRESHOLD) new_tone = B_FREQ;
-  if(c2_val > THRESHOLD) new_tone = C2_FREQ;*/
+  if(c_val > THRESHOLD * avg && c_val > ABS_THRESHOLD) new_tone = C_FREQ;
+  if(d_val > THRESHOLD * avg && d_val > ABS_THRESHOLD) new_tone = D_FREQ;
+  if(e_val > THRESHOLD * avg && e_val > ABS_THRESHOLD) new_tone = E_FREQ;
+  if(f_val > THRESHOLD * avg && f_val > ABS_THRESHOLD) new_tone = F_FREQ;
+  if(g_val > THRESHOLD * avg && g_val > ABS_THRESHOLD) new_tone = G_FREQ;
+  if(a_val > THRESHOLD * avg && a_val > ABS_THRESHOLD) new_tone = A_FREQ;
+  if(b_val > THRESHOLD * avg && b_val > ABS_THRESHOLD) new_tone = B_FREQ;
+  if(c2_val > THRESHOLD * avg && c2_val > ABS_THRESHOLD) new_tone = C2_FREQ;
 
   // update LEDs
-  digitalWrite(LED1_PIN, c_key_count > TRIGGER_COUNT ? HIGH : LOW);
-  digitalWrite(LED2_PIN, d_key_count > TRIGGER_COUNT ? HIGH : LOW);
-  digitalWrite(LED3_PIN, e_key_count > TRIGGER_COUNT ? HIGH : LOW);
-  digitalWrite(LED4_PIN, f_key_count > TRIGGER_COUNT ? HIGH : LOW);
-  digitalWrite(LED5_PIN, g_key_count > TRIGGER_COUNT ? HIGH : LOW);
-  digitalWrite(LED6_PIN, a_key_count > TRIGGER_COUNT ? HIGH : LOW);
-  digitalWrite(LED7_PIN, b_key_count > TRIGGER_COUNT ? HIGH : LOW);
-  digitalWrite(LED8_PIN, c2_key_count > TRIGGER_COUNT ? HIGH : LOW);
+  digitalWrite(LED1_PIN, new_tone == C_FREQ ? HIGH : LOW);
+  digitalWrite(LED2_PIN, new_tone == D_FREQ ? HIGH : LOW);
+  digitalWrite(LED3_PIN, new_tone == E_FREQ ? HIGH : LOW);
+  digitalWrite(LED4_PIN, new_tone == F_FREQ ? HIGH : LOW);
+  digitalWrite(LED5_PIN, new_tone == G_FREQ ? HIGH : LOW);
+  digitalWrite(LED6_PIN, new_tone == A_FREQ ? HIGH : LOW);
+  digitalWrite(LED7_PIN, new_tone == B_FREQ ? HIGH : LOW);
+  digitalWrite(LED8_PIN, new_tone == C2_FREQ ? HIGH : LOW);
 
   // do we need to take action?
   if(new_tone != current_tone) {
