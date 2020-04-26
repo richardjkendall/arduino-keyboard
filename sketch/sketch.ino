@@ -74,7 +74,7 @@ CBuffer b_buf = CBuffer();
 CBuffer c2_buf = CBuffer();
 
 // debug?
-const bool DEBUG = false;
+const bool DEBUG = true;
 
 void setup() {
   // setup output pins
@@ -98,14 +98,14 @@ void setup() {
 
 void loop() {
   // read the sensors
-  long c_val = c_key.capacitiveSensor(30);
-  long d_val = d_key.capacitiveSensor(30);
-  long e_val = e_key.capacitiveSensor(30);
-  long f_val = f_key.capacitiveSensor(30);
-  long g_val = g_key.capacitiveSensor(30);
-  long a_val = a_key.capacitiveSensor(30);
-  long b_val = b_key.capacitiveSensor(30);
-  long c2_val = c2_key.capacitiveSensor(30);
+  long c_val = c_key.capacitiveSensor(10);
+  long d_val = d_key.capacitiveSensor(10);
+  long e_val = e_key.capacitiveSensor(10);
+  long f_val = f_key.capacitiveSensor(10);
+  long g_val = g_key.capacitiveSensor(10);
+  long a_val = a_key.capacitiveSensor(10);
+  long b_val = b_key.capacitiveSensor(10);
+  long c2_val = c2_key.capacitiveSensor(10);
 
   // calc current avg
   long total = c_val + d_val + e_val + f_val + g_val + a_val + b_val + c2_val;
