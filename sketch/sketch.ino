@@ -74,7 +74,7 @@ CBuffer b_buf = CBuffer();
 CBuffer c2_buf = CBuffer();
 
 // debug?
-const bool DEBUG = true;
+const bool DEBUG = false;
 
 void setup() {
   // setup output pins
